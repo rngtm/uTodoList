@@ -10,7 +10,7 @@ Usage
 
 <br>
 
-2) Add tasks which you need into the list.
+2) Add tasks to the list.
 <br>
 <img width = 400 src = "./Demo/usage_2.png">
 
