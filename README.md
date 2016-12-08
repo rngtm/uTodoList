@@ -18,7 +18,7 @@ Usage
 <br>
 That's it!
 <br>
-<img src = "./Demo/demo.gif">
+<img width = 500 src = "./Demo/demo.gif">
 
 License
 -------
