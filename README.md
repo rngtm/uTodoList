@@ -4,7 +4,7 @@ uTodoList
 
 Usage
 -------
-1) Select "Tools/Easy Script Tester" in the menu.
+1) Select "Tools/uTodoList" in the menu.
 <br>
 <img width = 256 src = "./Demo/usage_1.png">
 
