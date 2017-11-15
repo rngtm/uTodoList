@@ -1,6 +1,6 @@
 ﻿///-----------------------------------
 /// uTodoList
-/// @ 2016 RNGTM(https://github.com/rngtm)
+/// @ 2017 RNGTM(https://github.com/rngtm)
 ///-----------------------------------
 namespace uTodoList
 {
@@ -37,7 +37,7 @@ namespace uTodoList
         /// <summary>
         /// 設定データの読み込み
         /// </summary>
-        public static TodoConfig LoadSettings()
+        public static TodoConfig LoadConfig()
         {
             return AssetDatabase.FindAssets("t:ScriptableObject")
            .Select(guid => AssetDatabase.GUIDToAssetPath(guid))

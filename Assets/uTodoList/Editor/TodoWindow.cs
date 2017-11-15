@@ -1,6 +1,6 @@
 ﻿///-----------------------------------
 /// uTodoList
-/// @ 2016 RNGTM(https://github.com/rngtm)
+/// @ 2017 RNGTM(https://github.com/rngtm)
 ///-----------------------------------
 namespace uTodoList
 {
@@ -112,6 +112,7 @@ namespace uTodoList
             {
                 this.RebuildList();
             }
+            if (this.taskList == null) { return; }
 
             if (Event.current.keyCode == KeyCode.Escape)
             {
@@ -119,7 +120,6 @@ namespace uTodoList
                 this.Repaint();
             }
 
-            if (this.taskList == null) { return; }
 
             this.scrollPosition = EditorGUILayout.BeginScrollView(this.scrollPosition);
             GUILayout.Space(2f);
@@ -147,6 +147,7 @@ namespace uTodoList
             EditorGUILayout.BeginHorizontal();
             EditorGUI.BeginChangeCheck();
             EditorGUILayout.LabelField("TodoData", GUILayout.Width(LabelWidth + 16f));
+
             var popupList = this.todoDataNames.Concat(new[] { "", "New..." }).ToArray();
             int index = EditorGUILayout.Popup(this.currentTodoDataIndex, popupList);
             if (EditorGUI.EndChangeCheck())
@@ -177,7 +178,7 @@ namespace uTodoList
         private void SelectDataByData(TodoData data)
         {
             var match = this.todoDatas
-            .Select((d, i) => new {Data = d, Index = i})
+            .Select((d, i) => new { Data = d, Index = i })
             .FirstOrDefault(item => item.Data.name == data.name);
 
             if (match != null)
@@ -203,7 +204,7 @@ namespace uTodoList
         /// </summary>
         private void ReloadDatas()
         {
-            var datas = DataLoader.LoadDatas();
+            var datas = DataLoader.LoadDatas().Where(data => data != null).ToArray();
             this.todoDatas = datas;
 
             if (datas == null || datas.Length == 0)
@@ -218,7 +219,7 @@ namespace uTodoList
             if (this.currentData == null)
             {
                 this.currentTodoDataIndex = 0;
-                var defaultData = DataLoader.LoadSettings().DefaultTodoData ?? DataLoader.LoadDatas().FirstOrDefault();
+                var defaultData = DataLoader.LoadConfig().DefaultTodoData ?? DataLoader.LoadDatas().FirstOrDefault();
 
                 var selectData = datas
                 .Select((data, i) => new { Index = i, Data = data })
@@ -298,14 +299,19 @@ namespace uTodoList
                 return list.elementHeight + (list.elementHeight - 8f) * (count - 1);
             };
 
+            // 背景の描画
+            var texture = DataLoader.LoadConfig().HighlightTexture;
+            list.drawElementBackgroundCallback += (rect, index, isActive, isFocused) =>
+            {
+                ReorderableList.defaultBehaviours.DrawElementBackground(rect, index, isActive, isFocused, list.draggable);
+                if (index == 0)
+                {
+                    GUI.DrawTexture(rect, texture);
+                }
+            };
 
-            // 要素
             list.drawElementCallback = (rect, index, isActive, isFocused) =>
             {
-                int count = textCount(index);
-
-                float height = rect.size.y + (rect.size.y - 8f) * (count - 1);
-                rect.size = new UnityEngine.Vector2(rect.size.x, height - 1);
                 rect.y += 2;
                 rect.height -= 5;
 
@@ -317,10 +323,10 @@ namespace uTodoList
                 textRect.width -= labelRect.width;
                 textRect.width -= 5;
 
-                EditorGUI.LabelField(labelRect, "Task " + index.ToString());
+                EditorGUI.LabelField(labelRect, string.Format("Task {0}", index));
 
                 EditorGUI.BeginChangeCheck();
-                var text = EditorGUI.TextArea(textRect, data.Tasks[index].Text);
+                string text = EditorGUI.TextArea(textRect, data.Tasks[index].Text);
 
                 if (EditorGUI.EndChangeCheck())
                 {
