@@ -29,7 +29,6 @@ namespace uTodoList
         [SerializeField, Header("ウィンドウを開いた時に選択されるデータ")] private TodoData defaultTodoData;
         [SerializeField, Header("ハイライトテクスチャ")] private Texture highlightTexture;
         [SerializeField, Header("ハイライトカラー")] private Color highlightTextColor;
-
         [SerializeField, Header("ヘッダー")] private Texture headerTexture;
 
         public TodoData DefaultTodoData { get { return this.defaultTodoData; } }

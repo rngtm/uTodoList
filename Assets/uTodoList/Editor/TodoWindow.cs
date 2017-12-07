@@ -11,62 +11,10 @@ namespace uTodoList
     using UnityEngine;
 
     /// <summary>
-    /// Todoの管理を行うクラス
+    /// Todo管理のウィンドウ
     /// </summary>
-    public class TodoWindow : EditorWindow
+    public partial class TodoWindow : EditorWindow
     {
-        /// <summary>
-        /// Label領域の大きさ
-        /// </summary>
-        private const float LabelWidth = 52f;
-
-        /// <summary>
-        /// ボタンの大きさ
-        /// </summary>
-        private const float ButtonWidth = 46f;
-
-        /// <summary>
-        /// 現在選択中のTodoのインデックス
-        /// </summary>
-        [SerializeField] private int currentTodoDataIndex = 0;
-
-        /// <summary>
-        /// 現在選択中のTodo
-        /// </summary>
-        [SerializeField] private TodoData currentData = null;
-
-        /// <summary>
-        /// 現在選択中のTodoの名前
-        /// </summary>
-        [SerializeField] private string currentDataName = string.Empty;
-
-        /// <summary>
-        /// Todoデータ一覧
-        /// </summary>
-        private TodoData[] todoDatas;
-
-        /// <summary>
-        /// Todoデータ名
-        /// </summary>
-        private string[] todoDataNames;
-
-        /// <summary>
-        /// タスク表示用のReorderableList
-        /// </summary>
-        private ReorderableList taskList;
-
-        /// <summary>
-        /// スクロール位置
-        /// </summary>
-        private Vector2 scrollPosition = new Vector2(0f, 0f);
-
-        /// <summary>
-        /// ExportのGUIを表示するかどうか
-        /// </summary>
-        [SerializeField] private bool isOpenExports = false;
-
-        private static bool _needReloadData = false;
-
         /// <summary>
         /// ウィンドウを開く
         /// </summary>
@@ -112,7 +60,6 @@ namespace uTodoList
             {
                 this.RebuildList();
             }
-            if (this.taskList == null) { return; }
 
             if (Event.current.keyCode == KeyCode.Escape)
             {
@@ -120,33 +67,38 @@ namespace uTodoList
                 this.Repaint();
             }
 
-
             this.scrollPosition = EditorGUILayout.BeginScrollView(this.scrollPosition);
             GUILayout.Space(2f);
 
-            this.TodoSelectionGUI();
-
-            // リストの表示
-            this.taskList.DoLayoutList();
-            GUILayout.Space(-this.taskList.footerHeight);
-
-
-            GUILayout.Space(3f);
-
-            // エクスポートGUIの表示
-            this.ExportGUI();
+            this.ShowTodoSelectionGUI();
+            this.ShowTaskList();
+            this.ShowDeleteGUI();
+            this.ShowExportGUI();
 
             EditorGUILayout.EndScrollView();
         }
 
         /// <summary>
+        /// 完了タスクの削除ボタン
+        /// </summary>
+        private void TodoRemoveButton()
+        {
+            // 完了タスクの削除ボタン
+            if (CustomUI.Button("完了タスク 削除", new Color(1f, 0.25f, 0.1f)))
+            {
+                this.currentData.Tasks.RemoveAll(t => t.IsDone);
+            }
+        }
+
+        /// <summary>
         /// Todo選択GUI
         /// </summary>
-        private void TodoSelectionGUI()
+        private void ShowTodoSelectionGUI()
         {
             EditorGUILayout.BeginHorizontal();
             EditorGUI.BeginChangeCheck();
-            EditorGUILayout.LabelField("TodoData", GUILayout.Width(LabelWidth + 16f));
+            // EditorGUILayout.LabelField("TodoData", GUILayout.Width(LabelWidth + 16f));
+            EditorGUILayout.LabelField("TodoData", GUILayout.Width(60f));
 
             var popupList = this.todoDataNames.Concat(new[] { "", "New..." }).ToArray();
             int index = EditorGUILayout.Popup(this.currentTodoDataIndex, popupList);
@@ -170,6 +122,15 @@ namespace uTodoList
                 EditorGUIUtility.PingObject(this.currentData);
             }
             EditorGUILayout.EndHorizontal();
+        }
+
+        /// <summary>
+        /// タスク一覧の表示
+        /// </summary>
+        public void ShowTaskList()
+        {
+            this.taskList.DoLayoutList();
+            GUILayout.Space(-this.taskList.footerHeight);
         }
 
         /// <summary>
@@ -222,6 +183,7 @@ namespace uTodoList
                 var defaultData = DataLoader.LoadConfig().DefaultTodoData ?? DataLoader.LoadDatas().FirstOrDefault();
 
                 var selectData = datas
+                .Where(data => data != null)
                 .Select((data, i) => new { Index = i, Data = data })
                 .FirstOrDefault(item => item.Data.name == defaultData.name);
 
@@ -260,16 +222,17 @@ namespace uTodoList
         /// </summary>
         private void RebuildList()
         {
-            this.taskList = CreateReorderableList(this.currentData, Repaint);
+            this.taskList = CreateReorderableList(this.currentData, Repaint, (task) => true);
         }
 
         /// <summary>
         /// ReorderableListの作成
         /// </summary>
-        static ReorderableList CreateReorderableList(TodoData data, System.Action repaintAction)
+        static private ReorderableList CreateReorderableList(TodoData data, System.Action repaintAction, System.Func<TodoData.TaskData, bool> showElementCallback)
         {
-            // テキストデータ
             var list = new ReorderableList(data.Tasks, typeof(string));
+
+            list.displayRemove = false;
 
             // ヘッダ
             Rect headerRect = default(Rect);
@@ -286,6 +249,11 @@ namespace uTodoList
                 ReorderableList.defaultBehaviours.DrawFooter(rect, list);
             };
 
+            list.onRemoveCallback = (l) =>
+            {
+                Debug.LogFormat("Remove: {0}", data.Tasks[l.index].Text);
+            };
+
             // テキストの行数を取得
             System.Func<int, int> textCount = (index) =>
             {
@@ -295,23 +263,46 @@ namespace uTodoList
             // 要素の高さ
             list.elementHeightCallback = (index) =>
             {
+                if (index >= data.Tasks.Count) { return 0f; }
+                if (!showElementCallback(data.Tasks[index])) { return 0; }
+
                 int count = textCount(index);
                 return list.elementHeight + (list.elementHeight - 8f) * (count - 1);
             };
 
             // 背景の描画
             var texture = DataLoader.LoadConfig().HighlightTexture;
+            bool isDrawTexture = false;
             list.drawElementBackgroundCallback += (rect, index, isActive, isFocused) =>
             {
+                if (index < 0 || index >= data.Tasks.Count) { return; }
+
                 ReorderableList.defaultBehaviours.DrawElementBackground(rect, index, isActive, isFocused, list.draggable);
                 if (index == 0)
                 {
-                    GUI.DrawTexture(rect, texture);
+                    isDrawTexture = false; // リセット
                 }
+
+                if (!showElementCallback(data.Tasks[index])) { return; }
+
+                if (!isDrawTexture)
+                {
+                    GUI.DrawTexture(rect, texture);
+                    isDrawTexture = true;
+                }
+            };
+
+            list.onAddCallback = (l) =>
+            {
+                data.Tasks.Insert(0, new TodoData.TaskData("NEW"));
+                EditorUtility.SetDirty(data);
             };
 
             list.drawElementCallback = (rect, index, isActive, isFocused) =>
             {
+                if (index >= data.Tasks.Count) { return; }
+                if (!showElementCallback(data.Tasks[index])) { return; }
+
                 rect.y += 2;
                 rect.height -= 5;
 
@@ -323,10 +314,12 @@ namespace uTodoList
                 textRect.width -= labelRect.width;
                 textRect.width -= 5;
 
-                EditorGUI.LabelField(labelRect, string.Format("Task {0}", index));
+                // EditorGUI.LabelField(labelRect, string.Format("Task {0}", index));
 
                 EditorGUI.BeginChangeCheck();
                 string text = EditorGUI.TextArea(textRect, data.Tasks[index].Text);
+
+                data.Tasks[index].IsDone = EditorGUI.Toggle(labelRect, data.Tasks[index].IsDone);
 
                 if (EditorGUI.EndChangeCheck())
                 {
@@ -341,9 +334,9 @@ namespace uTodoList
         /// <summary>
         /// エクスポート用のGUIの表示
         /// </summary>
-        private void ExportGUI()
+        private void ShowExportGUI()
         {
-            this.isOpenExports = Foldout("Export", this.isOpenExports);
+            this.isOpenExports = CustomUI.Foldout("Export", this.isOpenExports);
             if (this.isOpenExports)
             {
                 GUILayout.Space(-3f);
@@ -366,35 +359,15 @@ namespace uTodoList
             }
         }
 
-        /// <summary>
-        /// 折り畳みをかっこよく表示
-        /// </summary>
-        private static bool Foldout(string title, bool display)
+        private void ShowDeleteGUI()
         {
-            var style = new GUIStyle("ShurikenModuleTitle");
-            style.font = new GUIStyle(EditorStyles.label).font;
-            style.border = new RectOffset(15, 7, 4, 4);
-            style.fixedHeight = 22;
-            style.contentOffset = new Vector2(20f, -2f);
-
-            var rect = GUILayoutUtility.GetRect(16f, 22f, style);
-            GUI.Box(rect, title, style);
-
-            var e = Event.current;
-
-            var toggleRect = new Rect(rect.x + 4f, rect.y + 2f, 13f, 13f);
-            if (e.type == EventType.Repaint)
+            this.isOpenDelete = CustomUI.Foldout("Delete", this.isOpenDelete);
+            if (this.isOpenDelete)
             {
-                EditorStyles.foldout.Draw(toggleRect, false, false, display, false);
+                // 完了タスクの削除ボタン
+                this.TodoRemoveButton();
             }
-
-            if (e.type == EventType.MouseDown && rect.Contains(e.mousePosition))
-            {
-                display = !display;
-                e.Use();
-            }
-
-            return display;
+            GUILayout.Space(3f);
         }
 
         /// <summary>

@@ -14,21 +14,23 @@ namespace uTodoList
     [SerializableAttribute]
     public class TodoData : ScriptableObject
     {
-        #region Variables
         [SerializeField] private List<TaskData> tasks = new List<TaskData>();
-        #endregion Variables
 
-        #region Properties
         /// <summary>
         /// Todoテキスト
         /// </summary>
         public List<TaskData> Tasks { get { return this.tasks; } }
-        #endregion Properties
 
         [System.SerializableAttribute]
         public class TaskData
         {
+            public bool IsDone = false;
             public string Text = string.Empty;
+
+            public TaskData(string text = "")
+            {
+                this.Text = text;
+            }
         }
     }
 }

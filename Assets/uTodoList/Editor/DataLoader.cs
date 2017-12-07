@@ -21,7 +21,7 @@ namespace uTodoList
         }
 
         /// <summary>
-        /// ルールの読み込み
+        /// Todoデータのロード
         /// </summary>
         public static TodoData[] LoadDatas()
         {
