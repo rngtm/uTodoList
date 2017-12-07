@@ -15,6 +15,8 @@ namespace uTodoList
     /// </summary>
     public partial class TodoWindow : EditorWindow
     {
+        private TodoConfig config;
+
         /// <summary>
         /// ウィンドウを開く
         /// </summary>
@@ -40,6 +42,11 @@ namespace uTodoList
         /// </summary>
         private void OnGUI()
         {
+            if (this.config == null)
+            {
+                this.config = DataLoader.LoadConfig();
+            }
+
             if (_needReloadData)
             {
                 _needReloadData = false;
@@ -84,7 +91,7 @@ namespace uTodoList
         private void TodoRemoveButton()
         {
             // 完了タスクの削除ボタン
-            if (CustomUI.Button("完了タスク 削除", new Color(1f, 0.25f, 0.1f)))
+            if (CustomUI.Button("完了タスク 削除", this.config.RemoveButtonTextColor, this.config.RemoveButtonBGColor))
             {
                 this.currentData.Tasks.RemoveAll(t => t.IsDone);
             }

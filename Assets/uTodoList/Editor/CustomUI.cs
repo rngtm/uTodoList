@@ -13,14 +13,22 @@ namespace uTodoList
     /// </summary>
     public static class CustomUI
     {
+        static GUIStyle CreateButtonStyle(Color color)
+        {
+            var style = new GUIStyle(GUI.skin.button);
+            style.normal.textColor = color;
+            return style;
+        }
+        
         /// <summary>
         /// 色つきボタンの表示
         /// </summary>
-        public static bool Button(string text, Color color, params GUILayoutOption[] options)
+        public static bool Button(string text, Color textColor, Color bgColor, params GUILayoutOption[] options)
         {
+            var style = CreateButtonStyle(textColor);
             var defautlColor = GUI.color;
-            GUI.backgroundColor = color;
-            bool click = GUILayout.Button(text);
+            GUI.backgroundColor = bgColor;
+            bool click = GUILayout.Button(text, style);
             GUI.backgroundColor = defautlColor;
             
             return click;

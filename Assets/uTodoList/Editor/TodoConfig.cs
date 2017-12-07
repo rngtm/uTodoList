@@ -30,10 +30,14 @@ namespace uTodoList
         [SerializeField, Header("ハイライトテクスチャ")] private Texture highlightTexture;
         [SerializeField, Header("ハイライトカラー")] private Color highlightTextColor;
         [SerializeField, Header("ヘッダー")] private Texture headerTexture;
+        [SerializeField, Header("削除ボタン　文字カラー")] private Color removeButtonTextColor;
+        [SerializeField, Header("削除ボタン　背景カラー")] private Color removeButtonBGColor;
 
         public TodoData DefaultTodoData { get { return this.defaultTodoData; } }
         public Texture HighlightTexture { get { return this.highlightTexture; } }
         public Color HighlightTextColor { get { return this.highlightTextColor; } }
         public Texture HeaderTexture { get { return this.headerTexture; } }
+        public Color RemoveButtonTextColor { get { return this.removeButtonTextColor; } }
+        public Color RemoveButtonBGColor { get { return this.removeButtonBGColor; } }
     }
 }
